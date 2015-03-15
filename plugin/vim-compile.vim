@@ -5,10 +5,12 @@
 " Website:     http://github.com/dbeniamine/vim-compile.vim
 " Version:     0.1
 
-if exists("g:loaded_VimCompile") || &cp
+"Don't load twice
+if exists("g:loaded_VimCompile")
     finish
 endif
 let g:loaded_VimCompile=0.1
+
 " Save context
 let s:save_cpo = &cpo
 set cpo&vim
