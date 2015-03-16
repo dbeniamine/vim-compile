@@ -191,7 +191,7 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     endif
     if(a:exec)
         " Execute the program
-        execute ":!".l:start
+        execute ":!".l:start." &"
         call VimCompileRedraw()
 
     endif
