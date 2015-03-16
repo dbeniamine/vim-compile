@@ -64,7 +64,7 @@ There are several predefined compilation mappings:
 CONFIGURATION                                              *VimCompile-configuration*
 
 Three variables can be used to configure the plugin, the two firsts ae
-dictionnaries (see :help Dictionnary) giving the association filetype =>
+dictionnaries (see :help |Dictionnary|) giving the association filetype =>
 compile or execute rule.
 For instances adding the following to your vimrc will change the compilation
 and execution rules for pandoc files
