@@ -16,7 +16,7 @@ secion.
 
     git clone https://github.com/dbeniamine/vim-compile.git
     cd todo.txt-vim
-    cp -R * ~/.vim
+    cp -r ./* ~/.vim
 
 ### Pathogen install
 
