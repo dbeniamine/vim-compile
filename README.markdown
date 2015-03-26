@@ -2,12 +2,12 @@
 
 ## What is this plugin ?
 
-This plugin is a helper for compiling directly from vim, we recommand to use
+This plugin is a helper for compiling directly from vim, I recommend to use
 it with [dispatch](https://github.com/tpope/vim-dispatch) but it can work
 without, it is also compatible with
 [vim-latex](http://vim-latex.sourceforge.net/) compilation settings.
 
-It provides an easy and unified way to set and use compilers, see the Feetures
+It provides an easy and unified way to set and use compilers, see the Features
 secion.
 
 ## Install
@@ -24,7 +24,7 @@ secion.
 
 ## Features
 
-This plugins provides a pre-defined list of complation and execution rules by
+This plugins provides a pre-defined list of compilation and execution rules by
 filetype using xdg-open (sometimes). If a Makefile are a build.xml is
 available, it will always be prefered to the filetype rule.
 The user can easily add / modify theses rules, see the next section.
@@ -76,8 +76,8 @@ There are several predefined compilation mappings:
 
 ## Configuration
 
-Three variables can be used to configure the plugin, the two firsts ae
-dictionnaries (see :help Dictionnary) giving the association filetype =>
+Three variables can be used to configure the plugin, the two firsts are
+dictionaries (see :help Dictionary) giving the association filetype =>
 compile or execute rule.
 For instances adding the following to your vimrc will change the compilation
 and execution rules for pandoc files
