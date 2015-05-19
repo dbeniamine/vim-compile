@@ -106,11 +106,25 @@ endif
 
 " Functions {{{1
 
+" Start a command {{{2
+" Choose the best way to start a command
+" Possibilities: Dispatch, Vimux, :!
+" TODO: le the user set a prefered choice
+function! VimCompileStartCmd(cmd)
+    if exists("g:loaded_dispatch")
+        execute ":Dispatch "
+    elseif exists("*VimuxRunCommand")
+        call VimuxRunCommand(a:cmd)
+    else
+        execute ":! ".a:cmd
+    endif
+endfunction
+
 " Launch a compilation {{{2
 " All arguments are booleans
 " args:
 "   compi:      Actually compile (or clean)
-"   forcemake:  Use Makefile instead of makeprg
+"   forcemake:  Use Makefile instead of predefined command
 "   parallel:   Pass -j option to Makefile, require forcemake
 "   install:    Do installation, require forcemake
 "   exec:       Start an execution
@@ -148,40 +162,32 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         endif
     endif
 
-    " Can we use dispatch ? {{{3
-    if(exists("g:loaded_dispatch"))
-        let s:dispatch=":Dispatch "
-    else
-        let s:dispatch=":! "
-    endif
-
     if(a:compi) " Compile {{{3
         " Save the file
         :w
-        let l:cmd=''
         if(a:forcemake) " Use make command {{{4
             if(a:clean)
-                let l:cmd="make clean"
-                execute s:dispatch.l:cmd
+                set makeprg="make clean"
+                call VimCompileStartCmd(l:cmd)
             endif
             let l:cmd="make"
             if(a:parallel) " Do it in parallel {{{5
                 let l:ncores=system("cat /proc/cpuinfo | grep processor | wc -l")
                 let l:ncores=substitute(l:ncores,"\n","","g")
-                let l:cmd.=" -j ".l:ncores
+                let makeprg.=" -j ".l:ncores
 
             endif
             if(a:install) " Also do make install {{{5
                 let l:oldcmd=l:cmd
-                let l:cmd.=" && ".l:oldcmd." install"
+                let makeprg.=" && ".l:oldcmd." install"
             endif
         endif
         " Do the compilation {{{4
-        execute s:dispatch.l:cmd
+        call VimCompileStartCmd(&makeprg)
         call VimCompileRedraw()
     endif
     if(a:exec) " Execute the program {{{3
-        execute ":!".l:start." &"
+        call VimCompileStartCmd(l:start." &")
         call VimCompileRedraw()
 
     endif
