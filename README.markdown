@@ -7,6 +7,10 @@ it with [dispatch](https://github.com/tpope/vim-dispatch) but it can work
 without, it is also compatible with
 [vim-latex](http://vim-latex.sourceforge.net/) compilation settings.
 
+Since v0.1.1 it can also compile using
+[vimux](https://github.com/benmills/vimux) but for the moment it does not
+provide the quickix window for vimux compilations.
+
 It provides an easy and unified way to set and use compilers, see the Features
 secion.
 
@@ -27,6 +31,7 @@ secion.
 This plugins provides a pre-defined list of compilation and execution rules by
 filetype using xdg-open (sometimes). If a Makefile are a build.xml is
 available, it will always be prefered to the filetype rule.
+
 The user can easily add / modify theses rules, see the next section.
 
 The following compilation function is provided
@@ -35,13 +40,18 @@ The following compilation function is provided
     " All arguments are booleans
     " args:
     "   compi:      Actually compile (or clean)
-    "   forcemake:  Use Makefile instead of makeprg
+    "   forcemake:  Use Makefile instead of predefined function
     "   parallel:   Pass -j option to Makefile, require forcemake
     "   install:    Do installation, require forcemake
     "   exec:       Start an execution
     "   clean:      doe a make clean, require forcemake
     function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
 
+The compilation is executed by the first available options:
+
+1. [Dispatch](https://github.com/tpope/vim-dispatch)
+2. [Vimux](https://github.com/benmills/vimux) (no quickfix for the moment)
+3. Native :make (always available)
 
 There are several predefined compilation mappings:
 
@@ -89,3 +99,8 @@ The third gives the default execution rule if none are defined for the
 filetype:
 
     let g:VimCompileDefaultExecutor="./%"
+
+## TODO
+
+1. Make QuickFix work with vimux
+2. Give Flexible choice for user (vim/Dispatch/Vimux/other function or plugin)

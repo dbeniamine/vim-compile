@@ -8,6 +8,9 @@ without, it is also compatible with
 It provides an easy and unified way to set and use compilers, see the Feetures
 secion.
 
+Since v0.1.1 it can also compile using
+[vimux](https://github.com/benmills/vimux) but for the moment it does not
+provide the quickix window for vimux compilations.
 
 ==============================================================================
 COMMANDS                                                       *VimCompile-commands*
@@ -29,6 +32,13 @@ The following compilation function is provided
     "   exec:       Start an execution
     "   clean:      doe a make clean, require forcemake
     function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
+
+The compilation is executed by the first available options:
+
+1. [Dispatch](https://github.com/tpope/vim-dispatch)
+2. [Vimux](https://github.com/benmills/vimux) (no quickfix for the moment)
+3. Native :make (always available)
+
 
 
 There are several predefined compilation mappings:
