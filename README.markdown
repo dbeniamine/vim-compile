@@ -19,7 +19,7 @@ secion.
 ### Quick install
 
     git clone https://github.com/dbeniamine/vim-compile.git
-    cd todo.txt-vim
+    cd vim-compile/
     cp -r ./* ~/.vim
 
 ### Pathogen install
