@@ -2,17 +2,16 @@
 
 ## What is this plugin ?
 
-This plugin is a helper for compiling directly from vim, I recommend to use
-it with [dispatch](https://github.com/tpope/vim-dispatch) but it can work
-without, it is also compatible with
-[vim-latex](http://vim-latex.sourceforge.net/) compilation settings.
+This plugin is a flexible helper for compiling directly from vim. Compilation
+and execution command are run using the first avalaible of the following
+options:
+1. Custom function (see [configuration](#Configuration)
+2. [Dispatch](https://github.com/tpope/vim-dispatch)
+3. Vim builtin shell (:make and :!)
 
-Since v0.1.1 it can also compile using
-[vimux](https://github.com/benmills/vimux) but for the moment it does not
-provide the quickix window for vimux compilations.
-
-It provides an easy and unified way to set and use compilers, see the Features
-secion.
+It also provides an easy and unified way to set and use compilers, and
+natively integrate with [vim-latex](http://vim-latex.sourceforge.net/)
+compilation settings.
 
 ## Install
 
@@ -47,21 +46,15 @@ The following compilation function is provided
     "   clean:      doe a make clean, require forcemake
     function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
 
-The compilation is executed by the first available options:
-
-1. [Dispatch](https://github.com/tpope/vim-dispatch)
-2. [Vimux](https://github.com/benmills/vimux) (no quickfix for the moment)
-3. Native :make (always available)
-
 There are several predefined compilation mappings:
 
-    " make
+    " make only
     noremap <leader>m :call VimCompileCompile(1,0,0,0,0,0)<CR>
 
-    " make & exec
+    " make and execute
     noremap <leader>me :call VimCompileCompile(1,0,0,0,1,0)<CR>
 
-    " make & install
+    " make and make install
     noremap <leader>mi :call VimCompileCompile(1,1,0,1,0,0)<CR>
 
     " make parallel
@@ -70,7 +63,7 @@ There are several predefined compilation mappings:
     " make install parallel
     noremap <leader>mij :call VimCompileCompile(1,1,1,1,0,0)<CR>
 
-    " make & exec parallel
+    " make parallel and execute
     noremap <leader>mje :call VimCompileCompile(1,1,1,0,1,0)<CR>
 
     " make clean
@@ -79,14 +72,12 @@ There are several predefined compilation mappings:
     " make clean and make
     noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
 
-    " exec
+    " execute
     noremap <leader>e :call VimCompileCompile(0,0,0,0,1,0)<CR><CR>
-
-
 
 ## Configuration
 
-Three variables can be used to configure the plugin, the two firsts are
+Four variables can be used to configure the plugin, the two firsts are
 dictionaries (see :help Dictionary) giving the association filetype =>
 compile or execute rule.
 For instances adding the following to your vimrc will change the compilation
@@ -100,7 +91,12 @@ filetype:
 
     let g:VimCompileDefaultExecutor="./%"
 
-## TODO
+A custom starter function (responsible for starting compilation and execution)
+can be provided by setting the following variable:
 
-1. Make QuickFix work with vimux
-2. Give Flexible choice for user (vim/Dispatch/Vimux/other function or plugin)
+     let g:VimCompileCustomStarter="MyStarterFunction"
+
+This function takes two argument:
+
++ cmd: the command to execute
++ type: 'm' if it is a compilation, 'e' otherwise

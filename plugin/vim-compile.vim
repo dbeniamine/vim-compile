@@ -3,13 +3,13 @@
 " Author:      David Beniamine <David@Beniamine.net>
 " License:     Vim license
 " Website:     http://github.com/dbeniamine/vim-compile.vim
-" Version:     0.1
+" Version:     0.2
 
 " Don't load twice {{{1
 if exists("g:loaded_VimCompile")
     finish
 endif
-let g:loaded_VimCompile=0.1
+let g:loaded_VimCompile=0.2
 
 " Save context {{{1
 let s:save_cpo = &cpo
@@ -38,9 +38,9 @@ endif
 " Executors {{{2
 let s:VimCompileDefaultExecutors={'cpp': " ./%:t:r", 'c': " ./%:t:r",
             \'java': "java\ %:t:r",
-            \'dot' : "xdg-open %:t:r.pdf > /dev/null 2>&1",
-            \'pandoc' : "xdg-open %:t:r.html > /dev/null 2>&1",
-            \'tex' : "xdg-open %:t:r.pdf > /dev/null 2>&1",
+            \'dot' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
+            \'pandoc' : "xdg-open %:t:r.html > /dev/null 2>&1 &",
+            \'tex' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
             \}
 if (exists("g:VimCompileExecutors"))
     for key in keys(s:VimCompileDefaultExecutors)
@@ -55,7 +55,6 @@ endif
 if (!exists("g:VimDefaultExecutor"))
     let g:VimCompileDefaultExecutor="./%"
 endif
-
 
 " Compilation mappings {{{1
 
@@ -108,14 +107,30 @@ endif
 
 " Start a command {{{2
 " Choose the best way to start a command
-" Possibilities: Dispatch, Vimux, :!
-" TODO: le the user set a prefered choice
-function! VimCompileStartCmd(cmd)
-    if exists("g:loaded_dispatch")
-        execute ":Dispatch "
-    elseif exists("*VimuxRunCommand")
-        call VimuxRunCommand(a:cmd)
+" Arguments: cmd: the command
+"            type: 'm' for a compilation, 'e' for a command to execute
+" Possibilities: Custom function, Dispatch, :!
+function! VimCompileStartCmd(cmd,type)
+    if exists("g:VimCompileCustomStarter")
+        " custom command
+        execute ":call ".g:VimCompileCustomStarter."('".a:cmd."','".a:type."')"
+    elseif exists("g:loaded_dispatch")
+        " Dispatch: differentiate real command from make
+        if a:type=='m'
+            execute ":Dispatch ".a:cmd
+        else
+            " Background should be handled by Dispatch
+            if (a:cmd=~'^.*&\s*$')
+                let l:cmd=substitute(a:cmd,'&\s*$','','')
+                echo l:cmd
+                sleep 2
+                execute ":Start! ".l:cmd
+            else
+                execute ":Start ".a:cmd
+            endif
+        endif
     else
+        " Normal execution
         execute ":! ".a:cmd
     endif
 endfunction
@@ -168,7 +183,7 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         if(a:forcemake) " Use make command {{{4
             if(a:clean)
                 set makeprg="make clean"
-                call VimCompileStartCmd(l:cmd)
+                call VimCompileStartCmd(l:cmd, 'm')
             endif
             let l:cmd="make"
             if(a:parallel) " Do it in parallel {{{5
@@ -183,14 +198,12 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
             endif
         endif
         " Do the compilation {{{4
-        call VimCompileStartCmd(&makeprg)
-        call VimCompileRedraw()
+        call VimCompileStartCmd(&makeprg, 'm')
     endif
     if(a:exec) " Execute the program {{{3
-        call VimCompileStartCmd(l:start." &")
-        call VimCompileRedraw()
-
+        call VimCompileStartCmd(l:start, 'e')
     endif
+    call VimCompileRedraw()
 endfunction
 
 " Redraw {{{2
