@@ -122,8 +122,6 @@ function! VimCompileStartCmd(cmd,type)
             " Background should be handled by Dispatch
             if (a:cmd=~'^.*&\s*$')
                 let l:cmd=substitute(a:cmd,'&\s*$','','')
-                echo l:cmd
-                sleep 2
                 execute ":Start! ".l:cmd
             else
                 execute ":Start ".a:cmd
