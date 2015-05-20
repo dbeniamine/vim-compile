@@ -3,13 +3,13 @@
 " Author:      David Beniamine <David@Beniamine.net>
 " License:     Vim license
 " Website:     http://github.com/dbeniamine/vim-compile.vim
-" Version:     0.2
+" Version:     0.2.2
 
 " Don't load twice {{{1
 if exists("g:loaded_VimCompile")
     finish
 endif
-let g:loaded_VimCompile=0.2
+let g:loaded_VimCompile=0.2.2
 
 " Save context {{{1
 let s:save_cpo = &cpo
@@ -105,33 +105,40 @@ endif
 
 " Functions {{{1
 
-" Start a command {{{2
-" Choose the best way to start a command
-" Arguments: cmd: the command
-"            type: 'm' for a compilation, 'e' for a command to execute
-" Possibilities: Custom function, Dispatch, :!
-function! VimCompileStartCmd(cmd,type)
-    if exists("g:VimCompileCustomStarter")
-        " custom command
-        execute ":call ".g:VimCompileCustomStarter."('".a:cmd."','".a:type."')"
-    elseif exists("g:loaded_dispatch")
-        " Dispatch: differentiate real command from make
-        if a:type=='m'
-            execute ":Dispatch ".a:cmd
+" Default command starter {{{2
+" Start a command using Dispatch if available or the shell escape
+" Arguments: cmd: the command to execute
+"            type: 'm' if we are doing a compilation, 'e' otherwise
+function! VimCompileDefaultStartCmd(cmd,type)
+    if (a:type=='m') " Compilation: use makeprg and :Dispatch or :make
+        let &makeprg=a:cmd
+        if exists("g:loaded_dispatch")
+            let l:launcher=":Dispatch"
         else
-            " Background should be handled by Dispatch
-            if (a:cmd=~'^.*&\s*$')
-                let l:cmd=substitute(a:cmd,'&\s*$','','')
-                execute ":Start! ".l:cmd
-            else
-                execute ":Start ".a:cmd
-            endif
+            let l:launcher=":make"
         endif
-    else
-        " Normal execution
-        execute ":! ".a:cmd
+    else " Normal command
+        let l:cmd=a:cmd
+        if exists("g:loaded_dispatch")
+            let l:launcher=":Start"
+            if (a:cmd=~'^.*&\s*$') " Let Dispatch handle background commands
+                let l:cmd=substitute(a:cmd,'&\s*$','','')
+                let l:launcher.="!"
+            endif
+        else " Simple shell escape
+            let l:launcher=":!"
+        endif
+        let l:launcher.=" ".l:cmd
     endif
+    execute l:launcher
 endfunction
+
+" Actual command starter {{{2
+if exists("g:VimCompileCustomStarter")
+    let s:VimCompileStartCmd=g:VimCompileCustomStarter
+else
+    let s:VimCompileStartCmd=function("VimCompileDefaultStartCmd")
+endif
 
 " Launch a compilation {{{2
 " All arguments are booleans
@@ -145,7 +152,7 @@ endfunction
 function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     let l:start=""
     if filereadable("Makefile") " Use makefile or build.xml if available {{{3
-        set makeprg='make'
+        let l:make='make'
         "Change the start only if the make run target exists
         execute "silent !cat Makefile | grep \"run[ ]*:\""
         if v:shell_error == 0
@@ -153,20 +160,23 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         endif
     elseif filereadable("build.xml")
         set efm=%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#
-        set makeprg='ant'
+        let l:make='ant'
     else " Use compile rule {{{3
 
-        if(&ft=='tex' && g:Tex_DefaultTargetFormat!="") " Latex specific {{{4
+        " Latex specific {{{4
+        if(&ft=='tex' && exists("g:Tex_DefaultTargetFormat")
+                    \ && g:Tex_DefaultTargetFormat!="")
             "Use latex suite if rule is defined
-            let &makeprg=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat)."\ %"
+            let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat)."\ %"
             let l:output="%:t:r.".g:Tex_DefaultTargetFormat
             let l:start=Tex_GetVarValue('Tex_ViewRule_'.g:Tex_DefaultTargetFormat)." ".l:output." &"
         else " Normal rule {{{4
             if(has_key(g:VimCompileCompilers,&ft))
-                let &makeprg=g:VimCompileCompilers[&ft]
+                let l:make=g:VimCompileCompilers[&ft]
             endif
         endif
     endif
+
     if l:start=="" " Executor {{{3
         if (has_key(g:VimCompileExecutors,&ft))
             let l:start=g:VimCompileExecutors[&ft]
@@ -180,26 +190,23 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         :w
         if(a:forcemake) " Use make command {{{4
             if(a:clean)
-                set makeprg="make clean"
-                call VimCompileStartCmd(l:cmd, 'm')
+                call s:VimCompileStartCmd("make clean", 'm')
             endif
-            let l:cmd="make"
+            let l:make="make"
             if(a:parallel) " Do it in parallel {{{5
                 let l:ncores=system("cat /proc/cpuinfo | grep processor | wc -l")
                 let l:ncores=substitute(l:ncores,"\n","","g")
-                let makeprg.=" -j ".l:ncores
-
+                let l:make.=" -j ".l:ncores
             endif
             if(a:install) " Also do make install {{{5
-                let l:oldcmd=l:cmd
-                let makeprg.=" && ".l:oldcmd." install"
+                let l:make=l:make." && ".l:make." install"
             endif
         endif
         " Do the compilation {{{4
-        call VimCompileStartCmd(&makeprg, 'm')
+        call s:VimCompileStartCmd(l:make, 'm')
     endif
     if(a:exec) " Execute the program {{{3
-        call VimCompileStartCmd(l:start, 'e')
+        call s:VimCompileStartCmd(l:start, 'e')
     endif
     call VimCompileRedraw()
 endfunction

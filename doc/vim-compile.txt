@@ -3,13 +3,18 @@
 This plugin is a flexible helper for compiling directly from vim. Compilation
 and execution command are run using the first avalaible of the following
 options:
-1. Custom function (see [configuration](#Configuration)
+1. Custom function (see |VimCompile-configuration|)
 2. [Dispatch](https://github.com/tpope/vim-dispatch)
-3. Vim builtin shell (:make and :!)
+3. Vim builtin shell (|:make| and |:!|)
 
 It also provides an easy and unified way to set and use compilers, and
 natively integrate with [vim-latex](http://vim-latex.sourceforge.net/)
 compilation settings.
+
+Since v0.2 you can define a custom function to launch commands (compilation
+and exectuion), see |VimCompile-configuration|.
+
+Note: since v0.2.2, you need to use |function()| to set a custom starter
 
 ==============================================================================
 COMMANDS                                                       *VimCompile-commands*
@@ -65,26 +70,57 @@ There are several predefined compilation mappings:
 ===============================================================================
 CONFIGURATION                                              *VimCompile-configuration*
 
-Three variables can be used to configure the plugin, the two firsts are
-dictionaries (see :help |Dictionary|) giving the association filetype =>
-compile or execute rule.
+Two dictionaries (see :help Dictionary) can be used to modify or add
+compilation and execution rules.
 For instances adding the following to your vimrc will change the compilation
 and execution rules for pandoc files
 
     let g:VimCompileExecutors={'pandoc' : "firefox %:t:r.html > /dev/null 2>&1",}
     let g:VimCompileCompiler={'pandoc' : "pandoc --smart --standalone --mathml --listings % > %:t:r.html",}
 
-The third gives the default execution rule if none are defined for the
-filetype:
+The following variable gives the default execution rule if none are defined
+for the filetype:
 
     let g:VimCompileDefaultExecutor="./%"
 
 A custom starter function (responsible for starting compilation and execution)
 can be provided by setting the following variable:
 
-     let g:VimCompileCustomStarter="MyStarterFunction"
+     let g:VimCompileCustomStarter=function("MyStarterFunction")
 
-This function takes two argument:
+A starter functions takes two arguments:
 
-+ cmd: the command to execute
-+ type: 'm' if it is a compilation, 'e' otherwise
++ the first is the command to execute
++ the second is a character:
+    + 'm' indicate that we are doing an actual compilation
+    + 'e' means that we run a custom command.
+
+For a better understanding of starter functions, there is the default one:
+
+    " Default command starter {{{2
+    " Start a command using Dispatch if available or the shell escape
+    " Arguments: cmd: the command to execute
+    "            type: 'm' if we are doing a compilation, 'e' otherwise
+    function! VimCompileDefaultStartCmd(cmd,type)
+        if (a:type=='m') " Compilation: use makeprg and :Dispatch or :make
+            let &makeprg=a:cmd
+            if exists("g:loaded_dispatch")
+                let l:launcher=":Dispatch"
+            else
+                let l:launcher=":make"
+            endif
+        else " Normal command
+            let l:cmd=a:cmd
+            if exists("g:loaded_dispatch")
+                let l:launcher=":Start"
+                if (a:cmd=~'^.*&\s*$') " Let Dispatch handle background commands
+                    let l:cmd=substitute(a:cmd,'&\s*$','','')
+                    let l:launcher.="!"
+                endif
+            else " Simple shell escape
+                let l:launcher=":!"
+            endif
+            let l:launcher.=" ".l:cmd
+        endif
+        execute l:launcher
+    endfunction
