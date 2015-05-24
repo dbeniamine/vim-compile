@@ -173,6 +173,8 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         else " Normal rule {{{4
             if(has_key(g:VimCompileCompilers,&ft))
                 let l:make=g:VimCompileCompilers[&ft]
+            else
+                let l:make=&makeprg
             endif
         endif
     endif
