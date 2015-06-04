@@ -24,6 +24,7 @@ let s:VimCompileDefaultCompilers={'cpp': " g++ -Wall -Werror -g -o %:t:r %",
             \"dot": "dot -Tpdf % %:t:r.pdf",
             \'pandoc': "pandoc --smart --standalone --mathml --listings % > %:t:r.html",
             \'tex': "pdflatex --interaction=nonstopmode %",
+            \'plaintex': "pdflatex --interaction=nonstopmode %",
             \}
 if (exists("g:VimCompileCompilers"))
     for key in keys(s:VimCompileDefaultCompilers)
@@ -41,6 +42,7 @@ let s:VimCompileDefaultExecutors={'cpp': " ./%:t:r", 'c': " ./%:t:r",
             \'dot' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
             \'pandoc' : "xdg-open %:t:r.html > /dev/null 2>&1 &",
             \'tex' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
+            \'plaintex' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
             \}
 if (exists("g:VimCompileExecutors"))
     for key in keys(s:VimCompileDefaultExecutors)
@@ -164,7 +166,7 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     else " Use compile rule {{{3
 
         " Latex specific {{{4
-        if(&ft=='tex' && exists("g:Tex_DefaultTargetFormat")
+        if( ( &ft=='tex' || &ft='plaintex' ) && exists("g:Tex_DefaultTargetFormat")
                     \ && g:Tex_DefaultTargetFormat!="")
             "Use latex suite if rule is defined
             let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat)."\ %"
