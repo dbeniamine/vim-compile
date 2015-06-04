@@ -166,8 +166,8 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     else " Use compile rule {{{3
 
         " Latex specific {{{4
-        if( ( &ft=='tex' || &ft='plaintex' ) && exists("g:Tex_DefaultTargetFormat")
-                    \ && g:Tex_DefaultTargetFormat!="")
+        if( ( &ft=='tex' || &ft=='plaintex' ) && exists("g:Tex_DefaultTargetFormat")
+                    \ && g:Tex_DefaultTargetFormat!="" )
             "Use latex suite if rule is defined
             let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat)."\ %"
             let l:output="%:t:r.".g:Tex_DefaultTargetFormat
