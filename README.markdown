@@ -5,6 +5,7 @@
 This plugin is a flexible helper for compiling directly from vim. Compilation
 and execution command are run using the first avalaible of the following
 options:
+
 1. Custom function (see [configuration](#configuration) )
 2. [Dispatch](https://github.com/tpope/vim-dispatch)
 3. Vim shell escape (`:make` and `:!`)
@@ -15,15 +16,17 @@ compilation settings.
 
 ## What is new ?
 
-+ Since v0.2.3, vim-compile will try to retrieve the latex main file for
-  compilation and execution.
++   Since v0.2.3, vim-compile will try to retrieve the latex main file for
+    compilation and execution.
+
     If latex-suite is activated, it search for a `*.latexmain` file, else it
     looks for a root file line, similar to the following:
+
         %!TEX root=my_main_file.tex
-+ *Note* Since v0.2.2, you need to use `function()` to set a custom starter
-function.
-+ Since v0.2 you can define a custom function to launch commands (compilation
-and exectuion), see [configuration](#configuration).
++   *Note* Since v0.2.2, you need to use `function()` to set a custom starter
+    function.
++   Since v0.2 you can define a custom function to launch commands (compilation
+    and exectuion), see [configuration](#configuration).
 
 
 ## Install
@@ -127,8 +130,8 @@ A starter functions takes two arguments:
 
 + the first is the command to execute
 + the second is a character:
-    + `m` indicate that we are doing an actual compilation
-    + `e` means that we run a custom command.
+    + `'m'` indicate that we are doing an actual compilation
+    + `'e'` means that we run a custom command.
 
 For a better understanding of starter functions, there is the default one:
 
