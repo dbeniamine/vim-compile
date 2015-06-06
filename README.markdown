@@ -10,16 +10,21 @@ options:
 3. Vim shell escape (`:make` and `:!`)
 
 It also provides an easy and unified way to set and use compilers, and
-natively integrate with [vim-latex](http://vim-latex.sourceforge.net/)
+natively integrate with [vim-latex-suite](http://vim-latex.sourceforge.net/)
 compilation settings.
 
-## What is new in v0.2.2 ?
+## What is new ?
 
-Since v0.2 you can define a custom function to launch commands (compilation
++ Since v0.2.3, vim-compile will try to retrieve the latex main file for
+  compilation and execution.
+    If latex-suite is activated, it search for a `*.latexmain` file, else it
+    looks for a root file line, similar to the following:
+        %!TEX root=my_main_file.tex
++ *Note* Since v0.2.2, you need to use `function()` to set a custom starter
+function.
++ Since v0.2 you can define a custom function to launch commands (compilation
 and exectuion), see [configuration](#configuration).
 
-**Note:** since v0.2.2, you need to use `function()` to set a custom starter
-function.
 
 ## Install
 
@@ -35,26 +40,26 @@ function.
 
 ## Features
 
-This plugins provides a pre-defined list of compilation and execution rules by
-filetype using xdg-open (sometimes). If a Makefile are a build.xml is
-available, it will always be prefered to the filetype rule.
 
-The user can easily add / modify theses rules, see the next section.
+This plugin provides an easy way to compile and execute any file.
 
-The following compilation function is provided
+Some compilation and executions rules are predefined for a few filetypes, but the
+user can redefine them, see [configuration](#configuration) for how.
 
-    " Launch a compilation
-    " All arguments are booleans
-    " args:
-    "   compi:      Actually compile (or clean)
-    "   forcemake:  Use Makefile instead of predefined function
-    "   parallel:   Pass -j option to Makefile, require forcemake
-    "   install:    Do installation, require forcemake
-    "   exec:       Start an execution
-    "   clean:      doe a make clean, require forcemake
-    function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
+If a `Makefile` exists in the working directory, `make` will be prefered over
+the predefined rule. The same way, if a `build.xml` file exists, `ant` will be
+prefered.
 
-There are several predefined compilation mappings:
+For latex files, if [vim-latex-suite](http://vim-latex.sourceforge.net/) is
+present, the predefined rules will be overwritten vy vim-late-suite settings.
+Vim-compile will always try to guess if the current file is part of a bigger
+latex project either using `*.latexmain` file (see help latex-master-file) or
+by searching for a line ̀like `%!TEX root=my_main_file.tex` in the current
+file. For these kind of project, vim should be open from the directory
+containing the main file.
+
+The compilation/execution function is visible to the user, and can be easily
+called. Still some usefull compilation mappings are defined:
 
     " make only
     noremap <leader>m :call VimCompileCompile(1,0,0,0,0,0)<CR>
@@ -82,6 +87,21 @@ There are several predefined compilation mappings:
 
     " execute
     noremap <leader>e :call VimCompileCompile(0,0,0,0,1,0)<CR><CR>
+
+It is possible to add other mappings, there is the specification of the
+compile function:
+
+    " Launch a compilation
+    " All arguments are booleans
+    " args:
+    "   compi:      Do compile (or clean)
+    "   forcemake:  Use make whatever (for make install / make clean rules)
+    "   parallel:   Pass -j option to Makefile, require forcemake
+    "   install:    Do installation, require forcemake
+    "   exec:       Start an execution
+    "   clean:      Make clean, require forcemake
+    function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
+
 
 ## <a name=configuration>Configuration</a>
 

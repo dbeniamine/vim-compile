@@ -18,11 +18,11 @@ set cpo&vim
 " Default compile/exec rules {{{1
 
 " Compilers {{{2
-let s:VimCompileDefaultCompilers={'cpp': " g++ -Wall -Werror -g -o %:t:r %",
-            \ 'c': "gcc -Wall -Werror -g -o %:t:r %",
+let s:VimCompileDefaultCompilers={'cpp': " g++ -Wall -Werror -g -o %:r %",
+            \ 'c': "gcc -Wall -Werror -g -o %:r %",
             \'java': "javac %",
-            \"dot": "dot -Tpdf % %:t:r.pdf",
-            \'pandoc': "pandoc --smart --standalone --mathml --listings % > %:t:r.html",
+            \"dot": "dot -Tpdf % %:r.pdf",
+            \'pandoc': "pandoc --smart --standalone --mathml --listings % > %:r.html",
             \'tex': "pdflatex --interaction=nonstopmode %",
             \'plaintex': "pdflatex --interaction=nonstopmode %",
             \}
@@ -37,12 +37,12 @@ else
 endif
 
 " Executors {{{2
-let s:VimCompileDefaultExecutors={'cpp': " ./%:t:r", 'c': " ./%:t:r",
-            \'java': "java\ %:t:r",
-            \'dot' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
-            \'pandoc' : "xdg-open %:t:r.html > /dev/null 2>&1 &",
-            \'tex' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
-            \'plaintex' : "xdg-open %:t:r.pdf > /dev/null 2>&1 &",
+let s:VimCompileDefaultExecutors={'cpp': " ./%:r", 'c': " ./%:r",
+            \'java': "java\ %:r",
+            \'dot' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
+            \'pandoc' : "xdg-open %:r.html > /dev/null 2>&1 &",
+            \'tex' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
+            \'plaintex' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
             \}
 if (exists("g:VimCompileExecutors"))
     for key in keys(s:VimCompileDefaultExecutors)
@@ -145,14 +145,26 @@ endif
 " Launch a compilation {{{2
 " All arguments are booleans
 " args:
-"   compi:      Actually compile (or clean)
-"   forcemake:  Use Makefile instead of predefined command
+"   compi:      Do compile (or clean)
+"   forcemake:  Use make whatever (for make install / make clean rules)
 "   parallel:   Pass -j option to Makefile, require forcemake
 "   install:    Do installation, require forcemake
 "   exec:       Start an execution
-"   clean:      doe a make clean, require forcemake
+"   clean:      Make clean, require forcemake
 function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
-    let l:start=""
+
+    if(has_key(g:VimCompileCompilers,&ft)) " Compilator {{{3
+        let l:make=g:VimCompileCompilers[&ft]
+    else
+        let l:make=&makeprg
+    endif
+
+    if (has_key(g:VimCompileExecutors,&ft)) " Executor {{{3
+        let l:start=g:VimCompileExecutors[&ft]
+    else
+        let l:start=g:VimCompileDefaultExecutor
+    endif
+
     if filereadable("Makefile") " Use makefile or build.xml if available {{{3
         let l:make='make'
         "Change the start only if the make run target exists
@@ -163,29 +175,41 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     elseif filereadable("build.xml")
         set efm=%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#
         let l:make='ant'
-    else " Use compile rule {{{3
-
-        " Latex specific {{{4
-        if( ( &ft=='tex' || &ft=='plaintex' ) && exists("g:Tex_DefaultTargetFormat")
-                    \ && g:Tex_DefaultTargetFormat!="" )
-            "Use latex suite if rule is defined
-            let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat)."\ %"
-            let l:output="%:t:r.".g:Tex_DefaultTargetFormat
-            let l:start=Tex_GetVarValue('Tex_ViewRule_'.g:Tex_DefaultTargetFormat)." ".l:output." &"
-        else " Normal rule {{{4
-            if(has_key(g:VimCompileCompilers,&ft))
-                let l:make=g:VimCompileCompilers[&ft]
+    else
+        if( &ft=='tex' || &ft=='plaintex' ) " Special ules for latex {{{4
+            " Use latex suite {{{5
+            if (exists("g:Tex_DefaultTargetFormat") && g:Tex_DefaultTargetFormat!="")
+                " Set main file
+                let l:mainfile=substitute(glob("*.latexmain"),".latexmain","","")
+                if empty(l:mainfile)
+                    let l:mainfile="%"
+                endif
+                " Update commands
+                let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat).l:mainfile
+                let l:output=substitute(l:mainfile,".[^\.]*$",".".g:Tex_DefaultTargetFormat,"")
+                let l:start=Tex_GetVarValue('Tex_ViewRule_'.g:Tex_DefaultTargetFormat)." ".l:output." &"
             else
-                let l:make=&makeprg
+                " No latex suite, try to guess the main {{{5
+                let l:ignore=&ignorecase
+                set ignorecase
+                " search for a line containing %!TEX root=
+                let l:line=search("%!TEX root=","cn")
+                if l:line != 0
+                    " If found set the path of the mainfile
+                    let l:path=substitute(getline(l:line),"%!TEX root=","","")
+                    " Remove extension
+                    let l:path=substitute(l:path, "\.[^\.]*$","","")
+                    if(stridx(l:path,"/")!=0)
+                        let l:mainfile="./".expand("%:h")."/".l:path
+                    else
+                        let l:mainfile=l:path
+                    endif
+                    " Update commands
+                    let &ignorecase=l:ignore
+                    let l:make=substitute(VimCompileExpandAll(l:make),expand("%:r"),l:mainfile,"g")
+                    let l:start=substitute(VimCompileExpandAll(l:start),expand("%:r"),l:mainfile,"g")
+                endif
             endif
-        endif
-    endif
-
-    if l:start=="" " Executor {{{3
-        if (has_key(g:VimCompileExecutors,&ft))
-            let l:start=g:VimCompileExecutors[&ft]
-        else
-            let l:start=g:VimCompileDefaultExecutor
         endif
     endif
 
@@ -223,6 +247,24 @@ function! VimCompileRedraw()
         sleep 500m
         redraw!
     endif
+endfunction
+
+" Expand a complete string as with expand. {{{2
+"   my_command %:t:r.pdf & > my_log
+" will be replace by
+"   my_command file.pdf & > my_log
+" while the native expand wouldn't have done any thing
+function! VimCompileExpandAll(str)
+    let l:accu=""
+    for s in split(a:str)
+        if s=~"%:.*\..*"
+            let l:words=split(s,'\.')
+            let l:accu.=" ".expand(l:words[0]).".".expand(l:words[1])
+        else
+            let l:accu.=" ".expand(s)
+        endif
+    endfor
+    return l:accu
 endfunction
 
 " Restore context {{{1
