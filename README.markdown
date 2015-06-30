@@ -22,7 +22,7 @@ compilation settings.
 
 +   Since V0.3, you can now define a custom builder for instance ̀`build.sh`
     with custom build and execute command. Such a builder will be always chosen
-    if available, see [custom builder](builder)
+    if available, see [custom builder](#builder)
 
 +   Since v0.2.3, vim-compile will try to retrieve the latex main file for
     compilation and execution.
