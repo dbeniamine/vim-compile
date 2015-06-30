@@ -165,7 +165,13 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
         let l:start=g:VimCompileDefaultExecutor
     endif
 
-    if filereadable("Makefile") " Use makefile or build.xml if available {{{3
+    " Use custom builder or makefile or build.xml if available {{{3
+    if exists("g:VimCompileCustomBuilder") && filereadable(g:VimCompileCustomBuilder)
+        let l:make=g:VimCompileCustomBuilderCompile
+        if exists("g:VimCompileCustomBuilderExec")
+            let l:start=g:VimCompileCustomBuilderExec
+        endif
+    elseif filereadable("Makefile")
         let l:make='make'
         "Change the start only if the make run target exists
         execute "silent !cat Makefile | grep \"run[ ]*:\""

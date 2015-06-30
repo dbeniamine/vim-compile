@@ -16,6 +16,10 @@ compilation settings.
 
 ## What is new ?
 
++   Since V0.3, you can now define a custom builder for instance ̀`build.sh`
+    with custom build and execute command. Such a builder will be always chosen
+    if available.
+
 +   Since v0.2.3, vim-compile will try to retrieve the latex main file for
     compilation and execution.
 
@@ -162,3 +166,10 @@ For a better understanding of starter functions, there is the default one:
         endif
         execute l:launcher
     endfunction
+
+One can define a custom builder to use instead of Makefile or build.xml if
+available by adding to following to its vimrc:
+
+    let g:VimCompileCustomBuilder='build.sh'
+    let g:VimCompileCustomBuilderCompile='./build.sh'
+    let g:VimCompileCustomBuilderExec='./build.sh view'
