@@ -6,7 +6,7 @@ This plugin is a flexible helper for compiling directly from vim. Compilation
 and execution command are run using the first avalaible of the following
 options:
 
-1. Custom function (see [configuration](#configuration) )
+1. Custom function (see [custom starter](#starter) )
 2. [Dispatch](https://github.com/tpope/vim-dispatch)
 3. Vim shell escape (`:make` and `:!`)
 
@@ -16,9 +16,13 @@ compilation settings.
 
 ## What is new ?
 
++   v0.3.1 allows the user to define a cleaning command to use with the custom
+    builder. It also adds a few bug fix and two new mappings (clean and
+    compile, clean compile and execute, see [mappings](#mappings))
+
 +   Since V0.3, you can now define a custom builder for instance ̀`build.sh`
     with custom build and execute command. Such a builder will be always chosen
-    if available.
+    if available, see [custom builder](builder)
 
 +   Since v0.2.3, vim-compile will try to retrieve the latex main file for
     compilation and execution.
@@ -30,7 +34,7 @@ compilation settings.
 +   *Note* Since v0.2.2, you need to use `function()` to set a custom starter
     function.
 +   Since v0.2 you can define a custom function to launch commands (compilation
-    and exectuion), see [configuration](#configuration).
+    and exectuion), see [custom starter](#starter).
 
 
 ## Install
@@ -45,17 +49,18 @@ compilation settings.
 
     git clone https://github.com/dbeniamine/vim-compile.git ~/.vim/bundle/vim-compile
 
-## Features
+## Usage
 
 
 This plugin provides an easy way to compile and execute any file.
 
 Some compilation and executions rules are predefined for a few filetypes, but the
-user can redefine them, see [configuration](#configuration) for how.
+user can redefine them, see [rules](#rules) for how.
 
 If a `Makefile` exists in the working directory, `make` will be prefered over
 the predefined rule. The same way, if a `build.xml` file exists, `ant` will be
-prefered.
+prefered. The user can also define a custom builder that will always be
+prefered to `make` and `ant`, see [custom builder](#builder)
 
 For latex files, if [vim-latex-suite](http://vim-latex.sourceforge.net/) is
 present, the predefined rules will be overwritten vy vim-late-suite settings.
@@ -65,52 +70,39 @@ by searching for a line ̀like `%!TEX root=my_main_file.tex` in the current
 file. For these kind of project, vim should be open from the directory
 containing the main file.
 
-The compilation/execution function is visible to the user, and can be easily
-called. Still some usefull compilation mappings are defined:
+### Mappings
 
-    " make only
-    noremap <leader>m :call VimCompileCompile(1,0,0,0,0,0)<CR>
+Some useful Mappings are defined:
 
-    " make and execute
-    noremap <leader>me :call VimCompileCompile(1,0,0,0,1,0)<CR>
++ `<leader>m` Compile
 
-    " make and make install
-    noremap <leader>mi :call VimCompileCompile(1,1,0,1,0,0)<CR>
++ `<leader>e` Execute
 
-    " make parallel
-    noremap <leader>mj :call VimCompileCompile(1,1,1,0,0,0)<CR>
++ `<leader>me` Compile and execute
 
-    " make install parallel
-    noremap <leader>mij :call VimCompileCompile(1,1,1,1,0,0)<CR>
++ `<leader>mc` Clean
 
-    " make parallel and execute
-    noremap <leader>mje :call VimCompileCompile(1,1,1,0,1,0)<CR>
++ `<leader>mcm` Clean and compile
 
-    " make clean
-    noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
-
-    " make clean and make
-    noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
-
-    " execute
-    noremap <leader>e :call VimCompileCompile(0,0,0,0,1,0)<CR><CR>
-
-It is possible to add other mappings, there is the specification of the
-compile function:
-
-    " Launch a compilation
-    " All arguments are booleans
-    " args:
-    "   compi:      Do compile (or clean)
-    "   forcemake:  Use make whatever (for make install / make clean rules)
-    "   parallel:   Pass -j option to Makefile, require forcemake
-    "   install:    Do installation, require forcemake
-    "   exec:       Start an execution
-    "   clean:      Make clean, require forcemake
-    function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
++ `<leader>mce` Clean, Compile and execute
 
 
-## <a name=configuration>Configuration</a>
+Some of the mappings are only working with Makefiles:
+
++ `<leader>mj` Make parallel
+
++ `<leader>mi` Make install
+
++ `<leader>mij` Make parallel and make install parallel
+
++ `<leader>mje` Make parallel and execute
+
+
+
+## Configuration
+
+
+### Rules
 
 Two dictionaries (see :help Dictionary) can be used to modify or add
 compilation and execution rules.
@@ -124,6 +116,8 @@ The following variable gives the default execution rule if none are defined
 for the filetype:
 
     let g:VimCompileDefaultExecutor="./%"
+
+### Starter
 
 A custom starter function (responsible for starting compilation and execution)
 can be provided by setting the following variable:
@@ -167,9 +161,19 @@ For a better understanding of starter functions, there is the default one:
         execute l:launcher
     endfunction
 
-One can define a custom builder to use instead of Makefile or build.xml if
-available by adding to following to its vimrc:
+### Builder
+
+Vim-compile allow you to define a custom compilation system which will always
+be used if available. For instance if you have a script called `build.sh`, you
+can define the following variables in your vimrc (adapt to your needs):
 
     let g:VimCompileCustomBuilder='build.sh'
     let g:VimCompileCustomBuilderCompile='./build.sh'
+
+You can also define an executor command using this build system:
+
     let g:VimCompileCustomBuilderExec='./build.sh view'
+
+And of course of command for cleanning the compilation stuff
+
+    let g:VimCompileCustomBuilderClean='./build.sh clean'

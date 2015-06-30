@@ -60,49 +60,54 @@ endif
 
 " Compilation mappings {{{1
 
-" make {{{2
+" compile {{{2
 if !hasmapto("<leader>m",'n')
-    noremap <leader>m :call VimCompileCompile(1,0,0,0,0,0)<CR>
+    noremap <leader>m :call VimCompileCompile(1,0,0,0,0)<CR>
 endif
 
-" make & exec {{{2
+" compile & exec {{{2
 if !hasmapto("<leader>me",'n')
-    noremap <leader>me :call VimCompileCompile(1,0,0,0,1,0)<CR>
+    noremap <leader>me :call VimCompileCompile(1,0,0,1,0)<CR>
 endif
 
-" make & install {{{2
+" make install and make install {{{2
 if !hasmapto("<leader>mi",'n')
-    noremap <leader>mi :call VimCompileCompile(1,1,0,1,0,0)<CR>
+    noremap <leader>mi :call VimCompileCompile(1,0,1,0,0)<CR>
 endif
 
 " make parallel {{{2
 if !hasmapto("<leader>mj",'n')
-    noremap <leader>mj :call VimCompileCompile(1,1,1,0,0,0)<CR>
+    noremap <leader>mj :call VimCompileCompile(1,1,0,0,0)<CR>
 endif
 
-" make install parallel {{{2
+" make parallel and make install parallel {{{2
 if !hasmapto("<leader>mij",'n')
-    noremap <leader>mij :call VimCompileCompile(1,1,1,1,0,0)<CR>
+    noremap <leader>mij :call VimCompileCompile(1,1,1,0,0)<CR>
 endif
 
-" make & exec parallel {{{2
+" make parallel and exec{{{2
 if !hasmapto("<leader>mje",'n')
-    noremap <leader>mje :call VimCompileCompile(1,1,1,0,1,0)<CR>
+    noremap <leader>mje :call VimCompileCompile(1,1,0,1,0)<CR>
 endif
 
-" make clean {{{2
+" clean {{{2
 if !hasmapto("<leader>mc",'n')
-    noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
+    noremap <leader>mc :call VimCompileCompile(1,0,0,0,1)<CR>
 endif
 
-" make clean and make {{{2
+" clean and compile {{{2
 if !hasmapto("<leader>mcm",'n')
-    noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
+    noremap <leader>mcm :call VimCompileCompile(1,0,0,0,2)<CR>
 endif
 
 " exec {{{2
 if !hasmapto("<leader>e",'n')
-    noremap <leader>e :call VimCompileCompile(0,0,0,0,1,0)<CR><CR>
+    noremap <leader>e :call VimCompileCompile(0,0,0,1,0)<CR><CR>
+endif
+
+" clean, compile ad execute {{{2
+if !hasmapto("<leader>mcm",'n')
+    noremap <leader>mce :call VimCompileCompile(1,0,0,1,2)<CR>
 endif
 
 " Functions {{{1
@@ -146,12 +151,12 @@ endif
 " All arguments are booleans
 " args:
 "   compi:      Do compile (or clean)
-"   forcemake:  Use make whatever (for make install / make clean rules)
-"   parallel:   Pass -j option to Makefile, require forcemake
-"   install:    Do installation, require forcemake
+"   parallel:   Pass -j option to Makefile, for makefile only
+"   install:    Do installation,  for makefile only
 "   exec:       Start an execution
-"   clean:      Make clean, require forcemake
-function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
+"   clean:      clean, (for Makefile, Ant and custom builder only), if clean==2
+"               continue compilation after cleaning
+function! VimCompileCompile(compi, parallel, install, exec,clean)
 
     if(has_key(g:VimCompileCompilers,&ft)) " Compilator {{{3
         let l:make=g:VimCompileCompilers[&ft]
@@ -222,10 +227,26 @@ function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
     if(a:compi) " Compile {{{3
         " Save the file
         :w
-        if(a:forcemake) " Use make command {{{4
-            if(a:clean)
-                call s:VimCompileStartCmd("make clean", 'm')
+        if(a:clean)
+            let l:clean=''
+            if exists("g:VimCompileCustomBuilderClean") && filereadable(g:VimCompileCustomBuilder)
+                let l:clean=g:VimCompileCustomBuilderClean
+            elseif filereadable("Makefile")
+               let l:clean="make clean"
+            elseif filereadable("build.xml") 
+                let l:clean="ant clean"
             endif
+            if l:clean!=''
+                call s:VimCompileStartCmd(l:clean, 'm')
+            else
+                echo "Clean is only available for make, ant, and custom builders"
+                sleep 3
+            endif
+            if(a:clean !=2)
+                return
+            endif
+        endif
+        if l:make=="make"
             let l:make="make"
             if(a:parallel) " Do it in parallel {{{5
                 let l:ncores=system("cat /proc/cpuinfo | grep processor | wc -l")
