@@ -39,8 +39,8 @@ USAGE                                                        *VimCompile-usage*
 
 This plugin provides an easy way to compile and execute any file.
 
-Some compilation and executions rules are predefined for a few filetypes, but the
-user can redefine them, see |VimCompile-rules| for how.
+Some compilation and executions rules are predefined for a few filetypes, but
+the user can redefine them, see |VimCompile-rules| for how.
 
 If a `Makefile` exists in the working directory, `make` will be prefered over
 the predefined rule. The same way, if a `build.xml` file exists, `ant` will be
@@ -55,7 +55,7 @@ by searching for a line ̀like %!TEX root=my_main_file.tex in the current
 file. For these kind of project, vim should be open from the directory
 containing the main file.
 
-Mappings                                                 *VimCompile-mappings*~
+Mappings                                                *VimCompile-mappings* ~
 
 Some useful Mappings are defined:
 
@@ -85,7 +85,7 @@ Some of the mappings are only working with Makefiles:
 ===============================================================================
 CONFIGURATION                                        *VimCompile-configuration*
 
-Compilation and execution rules                     *VimCompile-rules*~
+Compilation and execution rules                            *VimCompile-rules* ~
 
 Two dictionaries (see :help Dictionary) can be used to modify or add
 compilation and execution rules.
@@ -100,7 +100,7 @@ for the filetype:
 
     let g:VimCompileDefaultExecutor="./%"
 
-Custom starter                                      *VimCompile-customStarter*~
+Custom starter                                     *VimCompile-customStarter* ~
 
 A custom starter function (responsible for starting compilation and execution)
 can be provided by setting the following variable:
@@ -144,7 +144,7 @@ For a better understanding of starter functions, there is the default one:
         execute l:launcher
     endfunction
 
-Custom builder                                      *VimCompile-customBuilder*~
+Custom builder                                     *VimCompile-customBuilder* ~
 
 Vim-compile allow you to define a custom compilation system which will always
 be used if available. For instance if you have a script called `build.sh`, you
