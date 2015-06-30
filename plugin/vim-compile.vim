@@ -40,7 +40,7 @@ endif
 let s:VimCompileDefaultExecutors={'cpp': " ./%:r", 'c': " ./%:r",
             \'java': "java\ %:r",
             \'dot' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
-            \'pandoc' : "xdg-open %:r.html > /dev/null 2>&1 &",
+            \'pandoc' : "xdg-open %:r:p.html > /dev/null 2>&1 &",
             \'tex' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
             \'plaintex' : "xdg-open %:r.pdf > /dev/null 2>&1 &",
             \}
