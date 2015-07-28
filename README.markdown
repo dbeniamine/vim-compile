@@ -63,7 +63,7 @@ prefered. The user can also define a custom builder that will always be
 prefered to `make` and `ant`, see [custom builder](#builder)
 
 For latex files, if [vim-latex-suite](http://vim-latex.sourceforge.net/) is
-present, the predefined rules will be overwritten vy vim-late-suite settings.
+present, the user can choose to overwrite predefined rules with vim-late-suite settings.
 Vim-compile will always try to guess if the current file is part of a bigger
 latex project either using `*.latexmain` file (see help latex-master-file) or
 by searching for a line ̀like `%!TEX root=my_main_file.tex` in the current
@@ -116,6 +116,10 @@ The following variable gives the default execution rule if none are defined
 for the filetype:
 
     let g:VimCompileDefaultExecutor="./%"
+
+To overwrite rules with LaTeX Suite settings, add the following to your vimrc:
+
+    let g:VimCompileUseLatexSuite=1
 
 ### Starter
 

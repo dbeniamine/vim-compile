@@ -112,6 +112,30 @@ endif
 
 " Functions {{{1
 
+function! VimCompileGetLatexMainFile()
+    " Set latex main file
+    let l:mainfile=substitute(glob("*.latexmain"),".latexmain","","")
+    if empty(l:mainfile)
+        let l:ignore=&ignorecase
+        set ignorecase
+        let l:line=search("%!TEX root=","cn")
+        let &ignorecase=l:ignore
+        if l:line != 0
+            " If found set the path of the mainfile
+            let l:path=substitute(getline(l:line),"%!TEX root=","","")
+            " Remove extension
+            let l:path=substitute(l:path, "\.[^\.]*$","","")
+            if(stridx(l:path,"/")!=0)
+                let l:mainfile="./".expand("%:h")."/".l:path
+            else
+                let l:mainfile=l:path
+            endif
+        else
+            let l:mainfile=expand("%")
+        endif
+    endif
+    return l:mainfile
+endfunction
 " Default command starter {{{2
 " Start a command using Dispatch if available or the shell escape
 " Arguments: cmd: the command to execute
@@ -170,100 +194,85 @@ function! VimCompileCompile(compi, parallel, install, exec,clean)
         let l:start=g:VimCompileDefaultExecutor
     endif
 
-    " Use custom builder or makefile or build.xml if available {{{3
-    if exists("g:VimCompileCustomBuilder") && filereadable(g:VimCompileCustomBuilder)
-        let l:make=g:VimCompileCustomBuilderCompile
-        if exists("g:VimCompileCustomBuilderExec")
-            let l:start=g:VimCompileCustomBuilderExec
+    if( &ft=='tex' || &ft=='plaintex' ) " Special rules for latex {{{3
+        " get main file
+        let l:mainfile=VimCompileGetLatexMainFile()
+        " prepare latex suite rules if defined
+        if (exists("g:Tex_DefaultTargetFormat") &&
+                    \ exists("g:VimCompileUseLatexSuite") &&
+                    \ g:VimCompileUseLatexSuite == 1)
+            let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat).l:mainfile
+            let l:output=substitute(l:mainfile,".[^\.]*$",".".g:Tex_DefaultTargetFormat,"")
+            let l:start=Tex_GetVarValue('Tex_ViewRule_'.g:Tex_DefaultTargetFormat)." ".l:output." &"
         endif
-    elseif filereadable("Makefile")
-        let l:make='make'
-        "Change the start only if the make run target exists
-        execute "silent !cat Makefile | grep \"run[ ]*:\""
-        if v:shell_error == 0
-            let l:start="make\ run"
-        endif
-    elseif filereadable("build.xml")
-        set efm=%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#
-        let l:make='ant'
-    else
-        if( &ft=='tex' || &ft=='plaintex' ) " Special ules for latex {{{4
-            " Use latex suite {{{5
-            if (exists("g:Tex_DefaultTargetFormat") && g:Tex_DefaultTargetFormat!="")
-                " Set main file
-                let l:mainfile=substitute(glob("*.latexmain"),".latexmain","","")
-                if empty(l:mainfile)
-                    let l:mainfile="%"
-                endif
-                " Update commands
-                let l:make=Tex_GetVarValue('Tex_CompileRule_'.g:Tex_DefaultTargetFormat).l:mainfile
-                let l:output=substitute(l:mainfile,".[^\.]*$",".".g:Tex_DefaultTargetFormat,"")
-                let l:start=Tex_GetVarValue('Tex_ViewRule_'.g:Tex_DefaultTargetFormat)." ".l:output." &"
-            else
-                " No latex suite, try to guess the main {{{5
-                let l:ignore=&ignorecase
-                set ignorecase
-                " search for a line containing %!TEX root=
-                let l:line=search("%!TEX root=","cn")
-                if l:line != 0
-                    " If found set the path of the mainfile
-                    let l:path=substitute(getline(l:line),"%!TEX root=","","")
-                    " Remove extension
-                    let l:path=substitute(l:path, "\.[^\.]*$","","")
-                    if(stridx(l:path,"/")!=0)
-                        let l:mainfile="./".expand("%:h")."/".l:path
-                    else
-                        let l:mainfile=l:path
-                    endif
-                    " Update commands
-                    let &ignorecase=l:ignore
-                    let l:make=substitute(VimCompileExpandAll(l:make),expand("%:r"),l:mainfile,"g")
-                    let l:start=substitute(VimCompileExpandAll(l:start),expand("%:r"),l:mainfile,"g")
-                endif
-            endif
+        " update rules
+        if (l:mainfile!=expand('%'))
+            " Update commands
+            let l:base=substitute(l:mainfile,'\(.*\)\.[^\.]*','\1','')
+            let l:make=substitute(VimCompileExpandAll(l:make),expand("%:r"),l:mainfile,"g")
+            let l:start=substitute(VimCompileExpandAll(l:start),expand("%:r"),l:base,'')
         endif
     endif
+endif
 
-    if(a:compi) " Compile {{{3
-        " Save the file
-        :w
-        if(a:clean)
-            let l:clean=''
-            if exists("g:VimCompileCustomBuilderClean") && filereadable(g:VimCompileCustomBuilder)
-                let l:clean=g:VimCompileCustomBuilderClean
-            elseif filereadable("Makefile")
-               let l:clean="make clean"
-            elseif filereadable("build.xml") 
-                let l:clean="ant clean"
-            endif
-            if l:clean!=''
-                call s:VimCompileStartCmd(l:clean, 'm')
-            else
-                echo "Clean is only available for make, ant, and custom builders"
-                sleep 3
-            endif
-            if(a:clean !=2)
-                return
-            endif
-        endif
-        if l:make=="make"
-            let l:make="make"
-            if(a:parallel) " Do it in parallel {{{5
-                let l:ncores=system("cat /proc/cpuinfo | grep processor | wc -l")
-                let l:ncores=substitute(l:ncores,"\n","","g")
-                let l:make.=" -j ".l:ncores
-            endif
-            if(a:install) " Also do make install {{{5
-                let l:make=l:make." && ".l:make." install"
-            endif
-        endif
-        " Do the compilation {{{4
-        call s:VimCompileStartCmd(l:make, 'm')
+" Use custom builder or makefile or build.xml if available {{{3
+if exists("g:VimCompileCustomBuilder") && filereadable(g:VimCompileCustomBuilder)
+    let l:make=g:VimCompileCustomBuilderCompile
+    if exists("g:VimCompileCustomBuilderExec")
+        let l:start=g:VimCompileCustomBuilderExec
     endif
-    if(a:exec) " Execute the program {{{3
-        call s:VimCompileStartCmd(l:start, 'e')
+elseif filereadable("Makefile")
+    let l:make='make'
+    "Change the start only if the make run target exists
+    execute "silent !cat Makefile | grep \"run[ ]*:\""
+    if v:shell_error == 0
+        let l:start="make\ run"
     endif
-    call VimCompileRedraw()
+elseif filereadable("build.xml")
+    set efm=%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#
+    let l:make='ant'
+endif
+
+if(a:compi) " Compile {{{3
+    " Save the file
+    :w
+    if(a:clean)
+        let l:clean=''
+        if exists("g:VimCompileCustomBuilderClean") && filereadable(g:VimCompileCustomBuilder)
+            let l:clean=g:VimCompileCustomBuilderClean
+        elseif filereadable("Makefile")
+            let l:clean="make clean"
+        elseif filereadable("build.xml")
+            let l:clean="ant clean"
+        endif
+        if l:clean!=''
+            call s:VimCompileStartCmd(l:clean, 'm')
+        else
+            echo "Clean is only available for make, ant, and custom builders"
+            sleep 3
+        endif
+        if(a:clean !=2)
+            return
+        endif
+    endif
+    if l:make=="make"
+        let l:make="make"
+        if(a:parallel) " Do it in parallel {{{5
+            let l:ncores=system("cat /proc/cpuinfo | grep processor | wc -l")
+            let l:ncores=substitute(l:ncores,"\n","","g")
+            let l:make.=" -j ".l:ncores
+        endif
+        if(a:install) " Also do make install {{{5
+            let l:make=l:make." && ".l:make." install"
+        endif
+    endif
+    " Do the compilation {{{4
+    call s:VimCompileStartCmd(l:make, 'm')
+endif
+if(a:exec) " Execute the program {{{3
+    call s:VimCompileStartCmd(l:start, 'e')
+endif
+call VimCompileRedraw()
 endfunction
 
 " Redraw {{{2
@@ -282,16 +291,7 @@ endfunction
 "   my_command file.pdf & > my_log
 " while the native expand wouldn't have done any thing
 function! VimCompileExpandAll(str)
-    let l:accu=""
-    for s in split(a:str)
-        if s=~"%:.*\..*"
-            let l:words=split(s,'\.')
-            let l:accu.=" ".expand(l:words[0]).".".expand(l:words[1])
-        else
-            let l:accu.=" ".expand(s)
-        endif
-    endfor
-    return l:accu
+    return substitute(a:str,'\(%[:phtre]*\)','\=expand(submatch(1))','g')
 endfunction
 
 " Restore context {{{1
