@@ -39,15 +39,22 @@ compilation settings.
 
 ## Install
 
+### Vizardry
+
+If you have [Vizardry](https://github.com/dbeniamine/vizardry) installed, you
+can run from vim:
+
+    :Invoke -u dbeniamine vim-compile
+
+### Pathogen install
+
+    git clone https://github.com/dbeniamine/vim-compile.git ~/.vim/bundle/vim-compile
+
 ### Quick install
 
     git clone https://github.com/dbeniamine/vim-compile.git
     cd vim-compile/
     cp -r ./* ~/.vim
-
-### Pathogen install
-
-    git clone https://github.com/dbeniamine/vim-compile.git ~/.vim/bundle/vim-compile
 
 ## Usage
 
