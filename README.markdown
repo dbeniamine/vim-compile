@@ -104,7 +104,9 @@ Some of the mappings are only working with Makefiles:
 
 + `<leader>mje` Make parallel and execute
 
+All makings can be disabled by adding the following line to your vimrc:
 
+    let g:VimCompileDoNotMap=1
 
 ## Configuration
 
