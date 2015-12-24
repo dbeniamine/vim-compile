@@ -141,8 +141,39 @@ A starter functions takes two arguments:
 
 + the first is the command to execute
 + the second is a character:
-    + `'m'` indicate that we are doing an actual compilation
-    + `'e'` means that we run a custom command.
+    + 'm' indicate that we are doing an actual compilation
+    + 'e' means that we run a custom command.
+
+This can be useful either for using something esle than dispatch and `:!` to
+launch a compilation / execution or to compute an execution command at
+runtime. For instance if you compile a latex file with synctex and want to
+start your viewer at the precise position of your cursor, you will need to add
+the current line and column inside the executor command which cannot be
+achieved with static executors. To do so (with qpdfview) you can add the
+following to your vimrc:
+
+
+    " Custom starter for latex synctex
+    function! VimCompileLatexStarter(cmd,type)
+        if &ft == "tex" && a:type !='m'
+            " Retrieve main file from vim-compile command
+            let l:file=substitute(a:cmd, '.* \([^ ]*\.pdf\).*','\1','')
+            " Generate command
+            " The command is: 'qpdfview --unique file.pdf#src:srcname:line:col'
+            execute ':! qpdfview --unique '.l:file.'\#src:'."%:p".':'.
+                        \getpos(".")[1].':'.getpos(".")[2]." &"
+        else
+            " Not a latex start, let vim-compile handle it
+            call vimcompile#DefaultStartCmd(a:cmd,a:type)
+        endif
+    endfunction
+
+    let g:VimCompileCustomStarter=function("VimCompileLatexStarter")
+
+As you can see, if we are not inside a latex file launching an execution this
+command will fallback to vim-compile default starter. In the other case we
+generate the right command to tell the reader (qpdfview here) the exact
+position in the editor.
 
 For a better understanding of starter functions, there is the default one:
 
@@ -150,7 +181,7 @@ For a better understanding of starter functions, there is the default one:
     " Start a command using Dispatch if available or the shell escape
     " Arguments: cmd: the command to execute
     "            type: 'm' if we are doing a compilation, 'e' otherwise
-    function! VimCompileDefaultStartCmd(cmd,type)
+    function! vimcompile#DefaultStartCmd(cmd,type)
         if (a:type=='m') " Compilation: use makeprg and :Dispatch or :make
             let &makeprg=a:cmd
             if exists("g:loaded_dispatch")
