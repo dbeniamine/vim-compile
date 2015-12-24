@@ -36,7 +36,7 @@ endfunction
 " Start a command using Dispatch if available or the shell escape
 " Arguments: cmd: the command to execute
 "            type: 'm' if we are doing a compilation, 'e' otherwise
-function! VimCompileDefaultStartCmd(cmd,type)
+function! vimcompile#DefaultStartCmd(cmd,type)
     if (a:type=='m') " Compilation: use makeprg and :Dispatch or :make
         let &makeprg=a:cmd
         if exists("g:loaded_dispatch")
@@ -64,7 +64,7 @@ endfunction
 if exists("g:VimCompileCustomStarter")
     let s:VimCompileStartCmd=g:VimCompileCustomStarter
 else
-    let s:VimCompileStartCmd=function("VimCompileDefaultStartCmd")
+    let s:VimCompileStartCmd=function("vimcompile#DefaultStartCmd")
 endif
 
 " Launch a compilation {{{2
